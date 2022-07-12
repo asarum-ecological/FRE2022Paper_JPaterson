@@ -45,9 +45,9 @@ FRECOMPSITES <- FRESITES %>%
 #####MODEL#####
 #MODEL 1: Percent Mudflat (recessed marsh)
 #I did not use a mixed effects model for this model, with the rationale that the random effects used in our other models (site, sample year) are not relevant
-#One could argue that "Year" could be used as a random effect, but much of the data used in these site-based models was acquired in 2021 using remote sensing
+#One could argue that "Year" could be used as a random effect, but much of the data used in these site-based models was acquired in 2021 via imagery analysis
 
-# Add integer version & generic "erosion protection"
+#Add integer version & generic "erosion protection"
 FRECOMPSITES <- FRECOMPSITES %>%
   mutate(recessed = as.integer(PRCNT_MUDFLAT),
          erosion_protection = as.factor(ifelse(SHEAR_BOOM == "Present"|
@@ -56,22 +56,23 @@ FRECOMPSITES <- FRECOMPSITES %>%
                                      "y", "n")),
          sampling_age_scale = scale(SAMPLING_AGE),
          km_upriver_scale = scale(DIST_UPRIVER_KM),
-         elev_adj_scale = scale(ELEV_ADJ)
+         elev_adj_scale = scale(ELEV_ADJ),
+         percent_edge_scale = scale(PRCNT_EDGE2),
+         area_mapped_scale = scale(AREA_MAPPED)
          ) 
 
 # Is response variable zero-inflated?
 hist(FRECOMPSITES$recessed, breaks = 25)
 
-
 # gamlss can fit Beta inflated distribution (BEINF), which is appropriate for inflated fixed-boundary responses (0,1) including boundary cases
-m1 <- gamlss(MUDFLAT_BIN ~ erosion_protection + SLOUGH + AGE + km_upriver_scale*elev_adj_scale + ARM, 
-             sigma.formula=~1, #erosion_protection + SLOUGH + AGE + km_upriver_scale*elev_adj_scale + ARM, 
-             nu.formula=~erosion_protection + SLOUGH + AGE + km_upriver_scale*elev_adj_scale + ARM , #erosion_protection + AGE  + DIST_UPRIVER_KM + ARM + PRCNT_EDGE2 + ELEV_ADJ, 
+m1 <- gamlss(MUDFLAT_BIN ~ erosion_protection + AGE + km_upriver_scale*elev_adj_scale + ARM + percent_edge_scale + area_mapped_scale, 
+             sigma.formula=~1, #erosion_protection  + AGE + km_upriver_scale*elev_adj_scale + ARM, 
+             nu.formula=~erosion_protection + AGE + km_upriver_scale*elev_adj_scale + ARM + percent_edge_scale + area_mapped_scale, #erosion_protection + AGE  + DIST_UPRIVER_KM + ARM + PRCNT_EDGE2 + ELEV_ADJ, 
              tau.formula=~1, 
              family = BEINF, 
              data = na.omit(FRECOMPSITES))
-# Need to better understand the parameters in this model, see: http://www.gamlss.com/wp-content/uploads/2013/01/gamlss-manual.pdf
 
+# Need to better understand the parameters in this model, see: http://www.gamlss.com/wp-content/uploads/2013/01/gamlss-manual.pdf
 
 # Diagnostics
 plot(m1)
@@ -88,12 +89,13 @@ summary(m1)
 
 # Predicting effect of distance upriver
 predict_recession = data.frame(erosion_protection = "n",
-                               SLOUGH = "No",
                                AGE = 0,
                                km_upriver_scale = seq(from = min(FRECOMPSITES$km_upriver_scale),
                                                       to = max(FRECOMPSITES$km_upriver_scale),
                                                       by = 0.1),
                                elev_adj_scale = 0,
+                               percent_edge_scale = mean(FRECOMPSITES$percent_edge_scale),
+                               area_mapped_scale = mean(FRECOMPSITES$area_mapped_scale),
                                ARM = "North") %>%
   mutate(predicted = predict(m1, newdata = ., type = "response"))
 
@@ -106,12 +108,13 @@ ggplot(data = predict_recession, aes(x = km_upriver_scale, y = predicted))+
 
 # Predicting effect of distance upriver
 predict_recession_elev = data.frame(erosion_protection = "n",
-                               SLOUGH = "No",
                                AGE = 0,
                                km_upriver_scale = 0,
                                elev_adj_scale = seq(from = min(FRECOMPSITES$elev_adj_scale),
                                                     to = max(FRECOMPSITES$elev_adj_scale),
                                                     by = 0.1),
+                               percent_edge_scale = mean(FRECOMPSITES$percent_edge_scale),
+                               area_mapped_scale = mean(FRECOMPSITES$area_mapped_scale),
                                ARM = "North") %>%
   mutate(predicted = predict(m1, newdata = ., type = "response"))
 
