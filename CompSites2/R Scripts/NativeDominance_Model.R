@@ -32,16 +32,30 @@ MASTERDATA$RC_Invasive <- as.numeric(MASTERDATA$RC_Invasive)
 
 ##Creating Subsets 
 
-FRECOMPSITES <- MASTERDATA %>%
+#old data for comp site-only analysis
+# FRECOMPSITES <- MASTERDATA %>%
+  # #Fraser River Subset (removing Pitt, Serpentine and Nicomekyl Rivers)
+  # filter(RIVER == "Fraser",
+  #        #Fraser Comp Site Subset (no natural/reference sites) 
+  #        REFERENCE == "No") 
+
+FREALLSITES <- MASTERDATA %>%
   #Fraser River Subset (removing Pitt, Serpentine and Nicomekyl Rivers)
-  filter(RIVER == "Fraser",
-         #Fraser Comp Site Subset (no natural/reference sites) 
-         REFERENCE == "No") 
+  filter(RIVER == "Fraser")
 
 # Scale numeric variables
-fre_scale <- FRECOMPSITES %>%
-  mutate(sampling_age_scale = scale(SAMPLING_AGE),
-         km_upriver_scale = scale(KM_UPRIVER),
+#old code: comp sites only
+# #fre_scale <- FRECOMPSITES %>%
+#   mutate(sampling_age_scale = scale(SAMPLING_AGE),
+#          km_upriver_scale = scale(KM_UPRIVER),
+#          elev_adj_scale = scale(ELEV_ADJ),
+#          prox_chan_scale = scale(PROX_CHAN),
+#          sample_year_group = as.factor(SAMPLE_YEAR),
+#          native_cover = RC_Native/100)
+
+# Scale numeric variables
+fre_scale <- FREALLSITES %>%
+  mutate(km_upriver_scale = scale(KM_UPRIVER),
          elev_adj_scale = scale(ELEV_ADJ),
          prox_chan_scale = scale(PROX_CHAN),
          sample_year_group = as.factor(SAMPLE_YEAR),
@@ -59,11 +73,19 @@ fre_scale <- FRECOMPSITES %>%
 # 2. test for an age effect within re
 
 # GLMER with a binomial response (proportion)
-natdom_glmer <- glmer(native_cover~INLAND + ARM + sampling_age_scale + km_upriver_scale*elev_adj_scale + prox_chan_scale + sample_year_group + (1|SITE),
+natdom_glmer <- glmer(native_cover~INLAND + ARM + REFERENCE + km_upriver_scale*elev_adj_scale + prox_chan_scale + sample_year_group + (1|SITE),
                      data = fre_scale,
                      family = "binomial",
                      control=glmerControl(optimizer="bobyqa", 
                                           optCtrl = list(maxfun = 100000)))
+
+# #old code for comp site only model
+# natdom_glmer <- glmer(native_cover~INLAND + ARM + sampling_age_scale + km_upriver_scale*elev_adj_scale + prox_chan_scale + sample_year_group + (1|SITE),
+#                       data = fre_scale,
+#                       family = "binomial",
+#                       control=glmerControl(optimizer="bobyqa", 
+#                                            optCtrl = list(maxfun = 100000)))
+
 
 # Model Diagnostics
 par(mfrow = c(2, 2))
