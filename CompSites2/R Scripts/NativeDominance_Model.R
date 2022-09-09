@@ -9,7 +9,7 @@
 ## Date Created:
 ##
 ## 
-## Email: 
+## Email:  daniel.stewart@asarum.org, j_paterson@ducks.ca
 ##
 ## ---------------------------
 

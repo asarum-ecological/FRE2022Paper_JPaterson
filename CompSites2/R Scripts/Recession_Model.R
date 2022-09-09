@@ -9,7 +9,7 @@
 ## Date Created:
 ##
 ## 
-## Email: 
+## Email:  daniel.stewart@asarum.org, j_paterson@ducks.ca
 ##
 ## ---------------------------
 
@@ -24,29 +24,24 @@ library(gamlss)
 #LOADING MASTER DATA .CSV 
 MASTERDATA <- read.csv("CompSites2/FieldData/MODEL1/SiteData_Master.csv") 
 
-#Ensuring columns are in correct format
-MASTERDATA$SAMPLE_YEAR <- as.factor(MASTERDATA$SAMPLE_YEAR)
-
-#Transforming mudflat data to 0-1 scale for binomial model
-MASTERDATA$MUDFLAT_BIN = (MASTERDATA$PRCNT_MUDFLAT/100)
-
-##Creating Subsets 
-#Fraser River Subset (removing Pitt, Serpentine and Nicomekyl Rivers)
-FRESITES <- MASTERDATA %>%
-  filter(RIVER == "Fraser") 
-#Fraser Comp Site Subset (no natural/reference sites) 
-FRECOMPSITES <- FRESITES %>%
-  filter(REFERENCE == "NO") 
-
-#Add integer version & generic "erosion protection"
-FRECOMPSITES <- FRECOMPSITES %>%
-  mutate(recessed = as.integer(PRCNT_MUDFLAT),
+# Data filters, scaling, updating formats
+FRECOMPSITES <- MASTERDATA %>%
+  filter(# Only include Fraser River sites, and remove Pitt, Serpentine and Nicomekyl Rivers
+         RIVER == "Fraser",
+         # Remove reference sites and only include created wetlands
+         REFERENCE == "NO") %>%
+  mutate(# Transform mudflat data to 0-1 scale for binomial model
+         MUDFLAT_BIN = PRCNT_MUDFLAT/100,
+         # Make sure year is a factor
+         SAMPLE_YEAR = as.factor(SAMPLE_YEAR),
+         # Add integer version of response & generic "erosion protection" to reduce number of predictor variables
+         recessed = as.integer(PRCNT_MUDFLAT),
          erosion_protection = as.factor(ifelse(SHEAR_BOOM == "Present"|
                                                  #SLOUGH == "Yes"|
                                                  OFFSHORE_STRUCTURE == "Present",
                                                "y", "n")),
          # Scaling variables on very different scales
-         # Note "as.numeric" added to remove extra attributes added by "scale()" that cause errors in predict.glm
+         # Note "as.numeric" added to remove extra attributes added by "scale()" that cause errors in predict
          sampling_age_scale = as.numeric(scale(SAMPLING_AGE)),
          km_upriver_scale = as.numeric(scale(DIST_UPRIVER_KM)),
          elev_adj_scale = as.numeric(scale(ELEV_ADJ)),
@@ -60,7 +55,6 @@ FRECOMPSITES <- FRECOMPSITES %>%
 
 # Is response variable zero-inflated?
 hist(FRECOMPSITES$recessed, breaks = 25)
-
 
 ###RESEARCH QUESTION #1: What factors lead to marsh recession? 
 
@@ -77,8 +71,6 @@ recession_glm <- glm(MUDFLAT_BIN ~ erosion_protection + age_scale + km_upriver_s
              family = "binomial", 
              data = FRECOMPSITES)
 
-# Need to better understand the parameters in this model, see: http://www.gamlss.com/wp-content/uploads/2013/01/gamlss-manual.pdf
-
 # Diagnostics
 par(mfrow = c(2,2))
 plot(recession_glm)
@@ -92,25 +84,19 @@ summary(recession_glm)
 # Main effects test
 car::Anova(recession_glm, type = 3)
 
-# Is the strong positive effect of distance upriver present if removing the few points far upriver?
-recession_glm_reduced <- glm(MUDFLAT_BIN ~ erosion_protection + age_scale + km_upriver_scale*elev_adj_scale + ARM + percent_edge_scale + area_mapped_scale, 
+# Fit GLM with no interaction
+# One approach is to use binomial GLM with proportion of marsh that is recessed (open mudflat) as the response variable
+recession_fixed_glm <- glm(MUDFLAT_BIN ~ erosion_protection + age_scale + km_upriver_scale + elev_adj_scale + ARM + percent_edge_scale + area_mapped_scale, 
                      family = "binomial", 
-                     data = FRECOMPSITES %>%
-                       filter(km_upriver_scale <= 1.96 &
-                                km_upriver_scale >= -1.96))
+                     data = FRECOMPSITES)
 
 # Diagnostics
 par(mfrow = c(2,2))
-plot(recession_glm_reduced)
+plot(recession_fixed_glm)
 par(mfrow = c(1,1))
 
-
 # Summary
-summary(recession_glm_reduced)
-
-# Main effects test
-car::Anova(recession_glm_reduced, type = 3)
-
+summary(recession_fixed_glm)
 
 ##### Predicted effects on marsh recession with GLM ------------------------------------
 
@@ -144,37 +130,6 @@ ggplot(data = predict_recession_glm, aes(x = km_upriver_scale, y = predicted))+
   theme_classic()
 
 
-# Predicting effect of distance upriver with reduced model
-predict_recession_glm_reduced <- data.frame(erosion_protection = "n",
-                                    age_scale = 0,
-                                    km_upriver_scale = seq(from = min(FRECOMPSITES$km_upriver_scale),
-                                                           to = max(FRECOMPSITES$km_upriver_scale),
-                                                           by = 0.1),
-                                    elev_adj_scale = 0,
-                                    percent_edge_scale = mean(FRECOMPSITES$percent_edge_scale),
-                                    area_mapped_scale = mean(FRECOMPSITES$area_mapped_scale),
-                                    ARM = "North") %>%
-  mutate(predicted = predict(recession_glm_reduced, newdata = ., 
-                             type = "response"),
-         predicted_se = predict(recession_glm_reduced, newdata = ., 
-                                type = "response", se = TRUE)$se.fit)
-
-# Plot
-ggplot(data = predict_recession_glm_reduced, aes(x = km_upriver_scale, y = predicted))+
-  geom_ribbon(data = predict_recession_glm, aes(x = km_upriver_scale,
-                                                ymin = predicted-predicted_se,
-                                                ymax = predicted + predicted_se),
-              fill = "darkgray") +
-  geom_ribbon(aes(ymin = predicted-predicted_se,
-                  ymax = predicted + predicted_se),
-              fill = "lightgray") +
-  stat_smooth(col = "black") +
-  stat_smooth(data = predict_recession_glm, aes(x = km_upriver_scale, y = predicted),
-              col = "red") +
-  geom_point(data = FRECOMPSITES, aes(x = km_upriver_scale, y = MUDFLAT_BIN)) +
-  labs(x = "Distance upriver (scaled)", y = "Marsh recession (proportion)") + 
-  theme_classic()
-
 # Predicting effect of distance upriver
 predict_recession_elev_glm <- data.frame(erosion_protection = "n",
                                     age_scale = 0,
@@ -201,25 +156,28 @@ ggplot(data = predict_recession_elev_glm, aes(x = elev_adj_scale, y = predicted)
 
 ##### Fit model for marsh recession -------------------------------------------
 
-# ALternate analyses using gamlss to fit a Beta-inflated distribution model, which accounts for zero inflation
-# and accommodates fixed-boundary responses (e.g. [0,1] as in here).
+# ALternate analyses using gamlss to fit a Beta zero inflated distribution model, which accounts for zero inflation
+# but requires responses <= 1.
 
 # gamlss can fit Beta inflated distribution (BEINF), which is appropriate for inflated fixed-boundary responses (0,1) including boundary cases
-# Fit same variable response for mu (first equation) and nu. Mu affects cases >0 p <1, nu affects po and p1
-m1 <- gamlss(MUDFLAT_BIN ~ erosion_protection + age_scale + km_upriver_scale*elev_adj_scale + ARM + percent_edge_scale + area_mapped_scale, 
+# Fit same variable response for mu (first equation) and nu. Mu affects cases >0 p <1, nu affects po (and p1 if Tau included), sigma affects precision
+gamlss_bezi <- gamlss(MUDFLAT_BIN ~ erosion_protection + age_scale + km_upriver_scale*elev_adj_scale + ARM + percent_edge_scale + area_mapped_scale, 
              sigma.formula=~1,
              nu.formula=~erosion_protection + age_scale + km_upriver_scale*elev_adj_scale + ARM + percent_edge_scale + area_mapped_scale, #erosion_protection + AGE  + DIST_UPRIVER_KM + ARM + PRCNT_EDGE2 + ELEV_ADJ, 
-             tau.formula=~1, 
-             family = BEINF, 
-             data = FRECOMPSITES)
+             family = BEZI, 
+             data = FRECOMPSITES %>%
+               mutate(MUDFLAT_BIN = ifelse(MUDFLAT_BIN == 1,
+                                            0.999,
+                                            MUDFLAT_BIN))
+             )
 
 # Need to better understand the parameters in this model, see: http://www.gamlss.com/wp-content/uploads/2013/01/gamlss-manual.pdf
 
 # Diagnostics
-plot(m1)
+plot(gamlss_bezi)
 
 # Summary
-summary(m1)
+summary(gamlss_bezi)
 
 
 ##### Predicted effects on marsh recession ------------------------------------
@@ -238,11 +196,11 @@ predict_recession = data.frame(erosion_protection = "n",
                                percent_edge_scale = mean(FRECOMPSITES$percent_edge_scale),
                                area_mapped_scale = mean(FRECOMPSITES$area_mapped_scale),
                                ARM = "North") %>%
-  mutate(predicted = predict(m1, newdata = ., type = "response"))
+  mutate(predicted_bezi = predict(gamlss_bezi, newdata = ., type = "response")) 
 
 # Plot
-ggplot(data = predict_recession, aes(x = km_upriver_scale, y = predicted))+
-  stat_smooth(col = "black") +
+ggplot(data = predict_recession, aes(x = km_upriver_scale, y = predicted_bezi))+
+  stat_smooth(col = "black") + 
   geom_point(data = FRECOMPSITES, aes(x = km_upriver_scale, y = MUDFLAT_BIN)) +
   labs(x = "Distance upriver (scaled)", y = "Marsh recession (proportion)") + 
   theme_classic()
@@ -257,47 +215,11 @@ predict_recession_elev = data.frame(erosion_protection = "n",
                                percent_edge_scale = mean(FRECOMPSITES$percent_edge_scale),
                                area_mapped_scale = mean(FRECOMPSITES$area_mapped_scale),
                                ARM = "North") %>%
-  mutate(predicted = predict(m1, newdata = ., type = "response"))
+  mutate(predicted_bezi = predict(gamlss_bezi, newdata = ., type = "response"))
 
 # Plot
-ggplot(data = predict_recession_elev, aes(x = elev_adj_scale, y = predicted))+
+ggplot(data = predict_recession_elev, aes(x = elev_adj_scale, y = predicted_bezi))+
   stat_smooth(col = "black") +
   geom_point(data = FRECOMPSITES, aes(x = elev_adj_scale, y = MUDFLAT_BIN)) +
   labs(x = "Elevation (scaled)", y = "Marsh recession (proportion)") + 
-  theme_classic()
-
-
-# Trying reduced gamlss
-FRECOMPSITES_reduced <- FRECOMPSITES %>%
-  filter(km_upriver_scale <= 1.96)
-m2 <- gamlss(MUDFLAT_BIN ~ erosion_protection + age_scale + km_upriver_scale*elev_adj_scale + ARM + percent_edge_scale + area_mapped_scale, 
-             sigma.formula=~1,
-             nu.formula=~erosion_protection + age_scale + km_upriver_scale*elev_adj_scale + ARM + percent_edge_scale + area_mapped_scale, #erosion_protection + AGE  + DIST_UPRIVER_KM + ARM + PRCNT_EDGE2 + ELEV_ADJ, 
-             tau.formula=~1, 
-             family = BEINF, 
-             data = FRECOMPSITES_reduced)
-
-# Diagnostics
-plot(m2)
-
-# Summary
-summary(m2)
-
-# Predicting effect of distance upriver
-predict_recession_m2 = data.frame(erosion_protection = "n",
-                               age_scale = 0,
-                               km_upriver_scale = seq(from = min(FRECOMPSITES$km_upriver_scale),
-                                                      to = max(FRECOMPSITES$km_upriver_scale),
-                                                      by = 0.1),
-                               elev_adj_scale = 0,
-                               percent_edge_scale = mean(FRECOMPSITES$percent_edge_scale),
-                               area_mapped_scale = mean(FRECOMPSITES$area_mapped_scale),
-                               ARM = "North") %>%
-  mutate(predicted = predict(m2, newdata = ., type = "response"))
-
-# Plot
-ggplot(data = predict_recession_m2, aes(x = km_upriver_scale, y = predicted))+
-  stat_smooth(col = "black") +
-  geom_point(data = FRECOMPSITES, aes(x = km_upriver_scale, y = MUDFLAT_BIN)) +
-  labs(x = "Distance upriver (scaled)", y = "Marsh recession (proportion)") + 
   theme_classic()
