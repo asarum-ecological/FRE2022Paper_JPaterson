@@ -20,6 +20,7 @@ library(ggplot2)
 library(dplyr)
 library(magrittr)
 library(lme4)
+library(sjPlot)
 
 #LOADING MASTER DATA .CSV 
 #note that models 2-4 use the same data table
@@ -103,3 +104,15 @@ summary(natdom_glmer)
 
 # Main effect tests
 car::Anova(natdom_glmer)
+
+
+#Coefficient Plot
+set_theme(base = theme_classic()) #To remove the background color and the grids
+#ploting model coefficients
+#names(MODEL1$coefficients) <- c('Mean Elevation','Debris Fence [Yes]','Shear Boom [Yes]','Offshore Structure [Present]','Slough [Yes]','Project Age','Project Size','Distance Upriver','% Edge','Closed Embayment [Yes]','Arm [North]')
+plot_model(natdom_glmer, show.values = TRUE, value.offset = .3, title = "Native Dominance", ci.lvl = .95,sort.est = TRUE,
+                      axis.labels = c('Closed Embayment [Yes]','Distance Upriver','Channel Proximity','Reference Site [Yes]','Elevation','Elevation:Distance Upriver','Sample Year','Arm [North]'))
+
+
+#produce model summary table html that can be copied into report 
+tab_model(MODEL1)
