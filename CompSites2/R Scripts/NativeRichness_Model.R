@@ -71,3 +71,9 @@ summary(natrich_glmer)
 
 # Test main effects
 car::Anova(natrich_glmer)
+
+#Coefficient Plot
+set_theme(base = theme_classic()) #To remove the background color and the grids
+plot_model(natrich_glmer, show.values = TRUE, value.offset = .3, title = "Native Richness", ci.lvl = .95,sort.est = TRUE,
+           axis.lim = c(0.55,1.5),
+           axis.labels = c('Closed Embayment [Yes]','Sample Year','Elevation:Distance Upriver','Arm [North]','Reference Site [Yes]','Channel Proximity','Elevation','Distance Upriver'))

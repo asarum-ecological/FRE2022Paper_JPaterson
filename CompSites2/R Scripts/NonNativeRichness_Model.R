@@ -72,3 +72,10 @@ summary(nonatrich_glmer)
 
 # Test main effects
 car::Anova(nonatrich_glmer)
+
+#Coefficient Plot
+plot_model(nonatrich_glmer, show.values = TRUE, value.offset = .3, title = "Non-Native Richness", ci.lvl = .95,sort.est = TRUE,
+           axis.lim = c(0.55,1.5),
+           axis.labels = c('Sample Year','Elevation:Distance Upriver','Closed Embayment [Yes]','Reference Site [Yes]','Channel Proximity','Arm [North]','Elevation','Distance Upriver'))
+
+
