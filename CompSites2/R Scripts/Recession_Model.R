@@ -20,6 +20,7 @@ library(ggplot2)
 library(dplyr)
 library(magrittr)
 library(gamlss)
+library(cowplot)
 
 #LOADING MASTER DATA .CSV 
 MASTERDATA <- read.csv("CompSites2/FieldData/MODEL1/SiteData_Master.csv") 
@@ -182,9 +183,10 @@ summary(gamlss_bezi)
 
 ##### Predicted effects on marsh recession ------------------------------------
 
-# Two main effects are:
+# Three main effects of interest are:
 # 1. Distance up-river,
 # 2. Elevation
+# 3. Project Age
 
 # Predicting effect of distance upriver
 predict_recession = data.frame(erosion_protection = "n",
@@ -198,14 +200,15 @@ predict_recession = data.frame(erosion_protection = "n",
                                ARM = "North") %>%
   mutate(predicted_bezi = predict(gamlss_bezi, newdata = ., type = "response")) 
 
-# Plot
-ggplot(data = predict_recession, aes(x = km_upriver_scale, y = predicted_bezi))+
+# Distance upriver/recession Plot 
+distupr_plot <- ggplot(data = predict_recession, aes(x = km_upriver_scale, y = predicted_bezi))+
   stat_smooth(col = "black") + 
   geom_point(data = FRECOMPSITES, aes(x = km_upriver_scale, y = MUDFLAT_BIN)) +
   labs(x = "Distance upriver (scaled)", y = "Marsh recession (proportion)") + 
-  theme_classic()
+  theme_classic() + 
+  theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
 
-# Predicting effect of distance upriver
+# Predicting effect of elevation
 predict_recession_elev = data.frame(erosion_protection = "n",
                                age_scale = 0,
                                km_upriver_scale = 0,
@@ -217,9 +220,35 @@ predict_recession_elev = data.frame(erosion_protection = "n",
                                ARM = "North") %>%
   mutate(predicted_bezi = predict(gamlss_bezi, newdata = ., type = "response"))
 
-# Plot
-ggplot(data = predict_recession_elev, aes(x = elev_adj_scale, y = predicted_bezi))+
+# Elevation/recession plot
+elev_plot <- ggplot(data = predict_recession_elev, aes(x = elev_adj_scale, y = predicted_bezi))+
   stat_smooth(col = "black") +
   geom_point(data = FRECOMPSITES, aes(x = elev_adj_scale, y = MUDFLAT_BIN)) +
-  labs(x = "Elevation (scaled)", y = "Marsh recession (proportion)") + 
-  theme_classic()
+  labs(x = "Elevation (scaled)", y ="") + 
+  theme_classic() + 
+  theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
+
+# Predicting effect of project age
+predict_recession_age = data.frame(erosion_protection = "n",
+                                    km_upriver_scale = 0,
+                                    elev_adj_scale = 0,
+                                    age_scale = seq(from = min(FRECOMPSITES$age_scale),
+                                                   to = max(FRECOMPSITES$age_scale),
+                                                   by = 0.1),
+                                    percent_edge_scale = mean(FRECOMPSITES$percent_edge_scale),
+                                    area_mapped_scale = mean(FRECOMPSITES$area_mapped_scale),
+                                    ARM = "North") %>%
+  mutate(predicted_bezi = predict(gamlss_bezi, newdata = ., type = "response"))
+
+# Age/recession plot
+age_plot <- ggplot(data = predict_recession_age, aes(x = age_scale, y = predicted_bezi))+
+  stat_smooth(col = "black") +
+  geom_point(data = FRECOMPSITES, aes(x = age_scale, y = MUDFLAT_BIN)) +
+  labs(x = "Project Age (scaled)", y = "") + 
+  theme_classic() + 
+  theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
+
+#figure for paper (uses "cowplot" package)
+plot_grid(distupr_plot,elev_plot,age_plot, ncol = 3)
+
+
