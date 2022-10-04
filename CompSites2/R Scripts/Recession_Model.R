@@ -251,4 +251,5 @@ age_plot <- ggplot(data = predict_recession_age, aes(x = age_scale, y = predicte
 #figure for paper (uses "cowplot" package)
 plot_grid(distupr_plot,elev_plot,age_plot, ncol = 3)
 
-
+#produce model summary table html that can be copied into MS
+sjPlot::tab_model(gamlss_bezi)

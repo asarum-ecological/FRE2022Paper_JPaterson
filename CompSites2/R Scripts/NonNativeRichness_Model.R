@@ -167,4 +167,6 @@ Fig6d <- ggplot(data = predict_natdom_emb_glm, aes(x = INLAND, y = predicted_glm
 #formation of panel figure using cowplot
 cowplot::plot_grid(Fig3a,Fig3b, Fig3c, Fig3d, ncol = 2)
 
+#produce model summary table html that can be copied into MS
+sjPlot::tab_model(nonatrich_glmer)
 

@@ -114,3 +114,5 @@ Figure4a = plot_model(natdom_glmer, show.values = TRUE, value.offset = .3, title
            axis.labels = c('Closed Embayment [Yes]','Distance Upriver','Channel Proximity','Reference Site [Yes]','Elevation','Elevation:Distance Upriver','Sample Year','Arm [North]'))
 
 
+#produce model summary table html that can be copied into MS
+sjPlot::tab_model(natdom_glmer)
