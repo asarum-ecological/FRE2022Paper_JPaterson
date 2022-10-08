@@ -80,92 +80,112 @@ Figure4c = plot_model(nonatrich_glmer, show.values = TRUE, value.offset = .3, ti
            axis.labels = c('Sample Year','Elevation:Distance Upriver','Closed Embayment [Yes]','Reference Site [Yes]','Channel Proximity','Arm [North]','Elevation','Distance Upriver'))
 
 
-###Plot Generation for Figure 6###----------------------------------------------------------------------
+#######Plot generation for Figure 5########--------------------------------------------------------
+# Three main effects of interest are:
+# 1. Distance up-river,
+# 2. Elevation
+# 3. Reference Site
+# 4. Closed Embayment 
 
-#work in progress!!
+#1. Predicting effect of distance upriver on non-native richness--------------------
+predict_nonatrich_distupr_glm <- data.frame(INLAND = "Yes",
+                                          SITE = "02-001",
+                                          REFERENCE = "No",
+                                          prox_chan_scale = 0,
+                                          elev_adj_scale = 0,
+                                          sample_year_group = "2015",
+                                          km_upriver_scale = seq(from = min(fre_scale$km_upriver_scale),
+                                                                 to = max(fre_scale$km_upriver_scale),
+                                                                 by = 0.1),
+                                          ARM = "North") %>%
+  mutate(predicted_glm = predict(nonatrich_glmer, newdata = ., type = "response"),
+         # Add unscaled (original) variable by multiplying scaled value by STD and adding mean
+         DISTUPR_ADJ =  (sd(fre_scale$KM_UPRIVER)*km_upriver_scale)+ mean(fre_scale$KM_UPRIVER))
 
-#Predicting effect of elevation on native dominance
-predict_natdom_elev_glm <- data.frame(INLAND = "Yes",
+
+#Distance Upriver/Native Dominance plot
+Fig5e <- ggplot(data = predict_nonatrich_distupr_glm, aes(x = DISTUPR_ADJ, y = predicted_glm))+
+  stat_smooth(col = "black",method = "loess") +
+  geom_point(data = fre_scale, aes(x = KM_UPRIVER, y = NN_RICH),alpha = 0.2) +
+  labs(x = "Distance Upriver (km)", y = "Non-Native Richness") + 
+  annotate("text", x = 0, y = 13.0, label = "  (e)") + 
+  theme_classic() +
+  theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
+
+#2. Predicting effect of elevation on native dominance---------------------------
+predict_nonatrich_elev_glm <- data.frame(INLAND = "Yes",
+                                       SITE = "02-001",
+                                       REFERENCE = "No",
+                                       prox_chan_scale = 0,
+                                       km_upriver_scale = 0,
+                                       sample_year_group = "2015",
+                                       elev_adj_scale = seq(from = min(fre_scale$elev_adj_scale),
+                                                            to = max(fre_scale$elev_adj_scale),
+                                                            by = 0.1),
+                                       ARM = "North") %>%
+  mutate(predicted_glm = predict(nonatrich_glmer, newdata = ., type = "response"),
+         # Add unscaled (original) variable by multiplying scaled value by STD and adding mean
+         ELEV_ADJ =  (sd(fre_scale$ELEV_ADJ)*elev_adj_scale)+ mean(fre_scale$ELEV_ADJ))
+
+
+#Elevation/Native Dominance plot
+Fig5f <- ggplot(data = predict_nonatrich_elev_glm, aes(x = ELEV_ADJ, y = predicted_glm))+
+  stat_smooth(col = "black",method = "loess") +
+  geom_point(data = fre_scale, aes(x = ELEV_ADJ, y = NN_RICH),alpha = 0.2) +
+  labs(x = "Elevation (m)", y = "") + 
+  annotate("text", x = -1, y = 13, label = "  (f)") + 
+  theme_classic() +
+  theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
+
+#3. Effect of reference site on native dominance---------------------------
+#Predicting effect of reference on native dominance
+predict_nonatrich_ref_glm <- data.frame(INLAND = "Yes",
                                       SITE = "02-001",
-                                      REFERENCE = "No",
                                       prox_chan_scale = 0,
                                       km_upriver_scale = 0,
+                                      elev_adj_scale = 0,
                                       sample_year_group = "2015",
-                                      elev_adj_scale = seq(from = min(fre_scale$elev_adj_scale),
-                                                           to = max(fre_scale$elev_adj_scale),
-                                                           by = 0.1),
+                                      REFERENCE = fre_scale$REFERENCE,
                                       ARM = "North") %>%
-  mutate(predicted_glm = predict(natdom_glmer, newdata = ., type = "response"))
-
-#Elevation/dominance plot
-Fig6a <- ggplot(data = predict_natdom_elev_glm, aes(x = elev_adj_scale, y = predicted_glm))+
-  stat_smooth(col = "black") +
-  geom_point(data = fre_scale, aes(x = elev_adj_scale, y = native_cover),alpha = 0.3) +
-  labs(x = "Elevation (scaled)", y = "Native Dominance (proportion)") + 
-  theme_classic() +
-  theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
-
-#Predicting effect of distance upriver on native dominance
-predict_natdom_distupr_glm <- data.frame(INLAND = "Yes",
-                                         SITE = "02-001",
-                                         REFERENCE = "No",
-                                         prox_chan_scale = 0,
-                                         elev_adj_scale = 0,
-                                         sample_year_group = "2015",
-                                         km_upriver_scale = seq(from = min(fre_scale$km_upriver_scale),
-                                                                to = max(fre_scale$km_upriver_scale),
-                                                                by = 0.1),
-                                         ARM = "North") %>%
-  mutate(predicted_glm = predict(natdom_glmer, newdata = ., type = "response"))
-
-#Dist upriver/dominance plot
-Fig6b <- ggplot(data = predict_natdom_distupr_glm, aes(x = km_upriver_scale, y = predicted_glm))+
-  stat_smooth(col = "black") +
-  geom_point(data = fre_scale, aes(x = km_upriver_scale, y = native_cover),alpha = 0.3) +
-  labs(x = "Distance Upriver (scaled)", y = "") + 
-  theme_classic() +
-  theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
-
-#Predicting effect of reference on native dominance
-predict_natdom_ref_glm <- data.frame(INLAND = "Yes",
-                                     SITE = "02-001",
-                                     prox_chan_scale = 0,
-                                     km_upriver_scale = 0,
-                                     elev_adj_scale = 0,
-                                     sample_year_group = "2015",
-                                     REFERENCE = fre_scale$REFERENCE,
-                                     ARM = "North") %>%
-  mutate(predicted_glm = predict(natdom_glmer, newdata = ., type = "response"))
+  mutate(predicted_glm = predict(nonatrich_glmer, newdata = ., type = "response"))
 
 #Reference/Dominance Plot
-Fig6c <- ggplot(data = predict_natdom_ref_glm, aes(x = REFERENCE, y = predicted_glm))+
-  geom_boxplot(data = fre_scale, aes(x = REFERENCE, y = native_cover)) +
-  geom_jitter(data = fre_scale, aes(x = REFERENCE, y = native_cover),alpha = 0.3) +
-  labs(x = "Reference Site", y = "Native Dominance (proportion)") + 
+Fig5g <- ggplot(data = predict_nonatrich_ref_glm, aes(x = REFERENCE, y = predicted_glm))+
+  geom_boxplot(data = fre_scale, aes(x = REFERENCE, y = NN_RICH)) +
+  geom_jitter(data = fre_scale, aes(x = REFERENCE, y = NN_RICH),alpha = 0.2) +
+  labs(x = "Reference Site", y = "") + 
+  annotate("text", x = .5, y = 13, label = "  (g)") + 
   theme_classic() +
   theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
+
+#4. Effect of embayment on native dominance---------------------------
 
 #Predicting effect of embayment on native dominance
-predict_natdom_emb_glm <- data.frame(REFERENCE = "No",
-                                     SITE = "02-001",
-                                     prox_chan_scale = 0,
-                                     km_upriver_scale = 0,
-                                     elev_adj_scale = 0,
-                                     sample_year_group = "2015",
-                                     INLAND = fre_scale$INLAND,
-                                     ARM = "North") %>%
-  mutate(predicted_glm = predict(natdom_glmer, newdata = ., type = "response"))
+predict_natrich_emb_glm <- data.frame(REFERENCE = "No",
+                                      SITE = "02-001",
+                                      prox_chan_scale = 0,
+                                      km_upriver_scale = 0,
+                                      elev_adj_scale = 0,
+                                      sample_year_group = "2015",
+                                      INLAND = fre_scale$INLAND,
+                                      ARM = "North") %>%
+  mutate(predicted_glm = predict(nonatrich_glmer, newdata = ., type = "response"))
 
 #Embayment/Dominance Plot
-Fig6d <- ggplot(data = predict_natdom_emb_glm, aes(x = INLAND, y = predicted_glm))+
-  geom_boxplot(data = fre_scale, aes(x = INLAND, y = native_cover)) +
-  geom_jitter(data = fre_scale, aes(x = REFERENCE, y = native_cover),alpha = 0.3) +
+Fig5h <- ggplot(data = predict_natrich_emb_glm, aes(x = INLAND, y = predicted_glm))+
+  geom_boxplot(data = fre_scale, aes(x = INLAND, y = NN_RICH)) +
+  geom_jitter(data = fre_scale, aes(x = REFERENCE, y = NN_RICH),alpha = 0.2) +
   labs(x = "Closed Embayment", y = "") + 
+  annotate("text", x = .5, y = 13, label = "  (h)") + 
   theme_classic() +
   theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
 
+
+
 #formation of panel figure using cowplot
-cowplot::plot_grid(Fig3a,Fig3b, Fig3c, Fig3d, ncol = 2)
+NONATPANEL <-cowplot::plot_grid(Fig5e,Fig5f, Fig5g, Fig5h, nrow = 1, ncol = 4)
+
+cowplot::plot_grid(NATPANEL,NONATPANEL,nrow = 2)
 
 #produce model summary table html that can be copied into MS
 sjPlot::tab_model(nonatrich_glmer)

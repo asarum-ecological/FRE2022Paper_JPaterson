@@ -23,7 +23,7 @@ library(gamlss)
 library(cowplot)
 
 #LOADING MASTER DATA .CSV 
-MASTERDATA <- read.csv("CompSites2/FieldData/MODEL1/SiteData_Master.csv") 
+MASTERDATA <- read.csv("CompSites2/FieldData/MODEL1/SiteData_Master.csv")
 
 # Data filters, scaling, updating formats
 FRECOMPSITES <- MASTERDATA %>%
@@ -114,11 +114,11 @@ predict_recession <- data.frame(erosion_protection = "n",
 
 
 # Distance upriver/recession Plot 
-distupr_plot <- ggplot(data = predict_recession, aes(x = km_upriver, y = predicted_bezi))+
+Plot2A <- ggplot(data = predict_recession, aes(x = km_upriver, y = predicted_bezi))+
   stat_smooth(col = "black", method = "loess") + 
   geom_point(data = FRECOMPSITES, aes(x = DIST_UPRIVER_KM, y = MUDFLAT_BIN)) +
   labs(x = "Distance upriver (km)", y = "Marsh recession (proportion)") + 
-  annotate("text", x = 0, y = 1.0, label = "(a)") +
+  annotate("text", x = 0, y = 1.0, label = "  (a)") +
   theme_classic() +
   theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
 
@@ -139,11 +139,11 @@ predict_recession_elev = data.frame(erosion_protection = "n",
 
 
 # Elevation/recession plot
-elev_plot <- ggplot(data = predict_recession_elev, aes(x = elev_adj, y = predicted_bezi))+
-  stat_smooth(col = "black") +
+Plot2B <- ggplot(data = predict_recession_elev, aes(x = elev_adj, y = predicted_bezi))+
+  stat_smooth(col = "black",method = "loess") +
   geom_point(data = FRECOMPSITES, aes(x = ELEV_ADJ, y = MUDFLAT_BIN)) +
   labs(x = "Elevation (m)", y ="") + 
-  annotate("text", x = 0, y = 1.0, label = "(b)") +
+  annotate("text", x = 0, y = 1.0, label = " (b)") +
   theme_classic() + 
   theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
 
@@ -161,16 +161,18 @@ predict_recession_age = data.frame(erosion_protection = "n",
          age = (sd(FRECOMPSITES$AGE)*age_scale)+ mean(FRECOMPSITES$AGE))
 
 # Age/recession plot
-age_plot <- ggplot(data = predict_recession_age, aes(x = age, y = predicted_bezi))+
-  stat_smooth(col = "black") +
+Plot2C <- ggplot(data = predict_recession_age, aes(x = age, y = predicted_bezi))+
+  stat_smooth(col = "black",method = "loess") +
   geom_point(data = FRECOMPSITES, aes(x = AGE, y = MUDFLAT_BIN)) +
   labs(x = "Project age (years)", y = "") + 
+  xlim(6,40) +
+  annotate("text", x = 6, y = 1.0, label = "  (c)") +
   theme_classic() + 
   theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
 
 #figure for paper (uses "cowplot" package)
-plot_grid(distupr_plot,elev_plot,age_plot, ncol = 3)
+cowplot::plot_grid(Plot2A,Plot2B,Plot2C, ncol = 3)
 
-#produce model summary table html that can be copied into MS
+#model summary table html that can be copied into MS
 sjPlot::tab_model(gamlss_bezi)
 
