@@ -100,7 +100,7 @@ hist(fre_scale$native_cover, breaks = 50)
 MuMIn::r.squaredGLMM(natdom_glmer)
 
 # Summary
-lmerTest::summary(natdom_glmer)
+#lmerTest::summary(natdom_glmer)
 
 
 # Main effect tests
@@ -111,7 +111,7 @@ car::Anova(natdom_glmer)
 set_theme(base = theme_classic()) #To remove the background color and the grids
 Figure4a = plot_model(natdom_glmer, show.values = TRUE, value.offset = .3, title = "Native Dominance", ci.lvl = .95,sort.est = TRUE,
            axis.lim = c(0.35,2),
-           axis.labels = c('Closed Embayment [Yes]','Distance Upriver','Channel Proximity','Reference Site [Yes]','Elevation','Elevation:Distance Upriver','Sample Year','Arm [North]'))
+           axis.labels = c('Embayed [Yes]','Dist. Upr.','Chan. Prox.','Ref. Site [Yes]','Elev.','Elev.:Dist. Upr.','Year','Arm [North]'))
 
 ###### Predicted effects on native dominance  ------------------------------------
 
@@ -141,7 +141,7 @@ predict_natdom_distupr_glm <- data.frame(INLAND = "Yes",
 #Distance Upriver/Native Dominance plot
 Fig3a <- ggplot(data = predict_natdom_distupr_glm, aes(x = DISTUPR_ADJ, y = predicted_glm))+
   stat_smooth(col = "black",method = "loess") +
-  geom_point(data = fre_scale, aes(x = KM_UPRIVER, y = native_cover),alpha = 0.3) +
+  geom_point(data = fre_scale, aes(x = KM_UPRIVER, y = native_cover),alpha = 0.2) +
   labs(x = "Distance Upriver (km)", y = "Native Dominance (proportion)") + 
   annotate("text", x = -4, y = 1.0, label = "  (a)") + 
   theme_classic() +
@@ -166,7 +166,7 @@ ELEV_ADJ =  (sd(fre_scale$ELEV_ADJ)*elev_adj_scale)+ mean(fre_scale$ELEV_ADJ))
 #Elevation/Native Dominance plot
 Fig3b <- ggplot(data = predict_natdom_elev_glm, aes(x = ELEV_ADJ, y = predicted_glm))+
   stat_smooth(col = "black",method = "loess") +
-  geom_point(data = fre_scale, aes(x = ELEV_ADJ, y = native_cover),alpha = 0.3) +
+  geom_point(data = fre_scale, aes(x = ELEV_ADJ, y = native_cover),alpha = 0.2) +
   labs(x = "Elevation (m)", y = "") + 
   annotate("text", x = -1.15, y = 1.0, label = "  (b)") + 
   theme_classic() +
@@ -187,7 +187,7 @@ predict_natdom_ref_glm <- data.frame(INLAND = "Yes",
 #Reference/Dominance Plot
 Fig3c <- ggplot(data = predict_natdom_ref_glm, aes(x = REFERENCE, y = predicted_glm))+
   geom_boxplot(data = fre_scale, aes(x = REFERENCE, y = native_cover)) +
-  geom_jitter(data = fre_scale, aes(x = REFERENCE, y = native_cover),alpha = 0.3) +
+  geom_jitter(data = fre_scale, aes(x = REFERENCE, y = native_cover),alpha = 0.2) +
   labs(x = "Reference Site", y = "Native Dominance (proportion)") + 
   annotate("text", x = .5, y = 1.0, label = "  (c)") + 
   theme_classic() +
@@ -208,7 +208,7 @@ predict_natdom_ref_glm <- data.frame(INLAND = "Yes",
 #Reference/Dominance Plot
 Fig3c <- ggplot(data = predict_natdom_ref_glm, aes(x = REFERENCE, y = predicted_glm))+
   geom_boxplot(data = fre_scale, aes(x = REFERENCE, y = native_cover)) +
-  geom_jitter(data = fre_scale, aes(x = REFERENCE, y = native_cover),alpha = 0.3) +
+  geom_jitter(data = fre_scale, aes(x = REFERENCE, y = native_cover),alpha = 0.2,outlier.shape = NA) +
   labs(x = "Reference Site", y = "Native Dominance (proportion)") + 
   annotate("text", x = .5, y = 1.0, label = "(c)") + 
   theme_classic() +
@@ -230,18 +230,37 @@ predict_natdom_ref_glm <- data.frame(REFERENCE = "No",
 #Embayment/Dominance Plot
 Fig3d <- ggplot(data = predict_natdom_ref_glm, aes(x = INLAND, y = predicted_glm))+
   geom_boxplot(data = fre_scale, aes(x = INLAND, y = native_cover)) +
-  geom_jitter(data = fre_scale, aes(x = REFERENCE, y = native_cover),alpha = 0.3) +
+  geom_jitter(data = fre_scale, aes(x = REFERENCE, y = native_cover),alpha = 0.2,outlier.shape = NA) +
   labs(x = "Closed Embayment", y = "") + 
   annotate("text", x = .5, y = 1.0, label = "(d)") + 
   theme_classic() +
   theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
 
+
 #formation of panel figure using cowplot
 cowplot::plot_grid(Fig3a,Fig3b, Fig3c, Fig3d, ncol = 2)
 
 
-
-
-
 #produce model summary table html that can be copied into MS
 sjPlot::tab_model(natdom_glmer)
+
+
+cowplot::plot_grid(Figure4a,Figure4b,Figure4c,ncol = 3)
+
+
+###OLD CODE-----------------------------------------------------------------------
+fre_scale$ELEVATION_2tile <- ntile(fre_scale$elev_adj_scale, 2)
+fre_scale$ELEVATION_3tile <- ntile(fre_scale$elev_adj_scale, 3)
+x <- fre_scale$elev_adj_scale
+
+fre_scale$elev_adj_scale_group <-
+  case_when(x > mean(x)+sd(x) ~ "high",
+            x < mean(x)+sd(x) & x > mean(x)-sd(x) ~ "average",
+            x < mean(x)-sd(x) ~ "low")
+
+count(fre_scale,fre_scale$elev_adj_scale_group)
+fre_scale$elev_adj_scale_group <- factor(fre_scale$elev_adj_scale_group, levels = c("high", "average", "low"))
+
+HIGHSITES = subset(fre_scale, elev_adj_scale_group == "high")
+MEDIUMSITES = subset(fre_scale, elev_adj_scale_group == "average")
+LOWSITES = subset(fre_scale, elev_adj_scale_group == "low")

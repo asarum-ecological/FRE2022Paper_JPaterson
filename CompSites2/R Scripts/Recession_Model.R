@@ -116,7 +116,7 @@ predict_recession <- data.frame(erosion_protection = "n",
 # Distance upriver/recession Plot 
 Plot2A <- ggplot(data = predict_recession, aes(x = km_upriver, y = predicted_bezi))+
   stat_smooth(col = "black", method = "loess") + 
-  geom_point(data = FRECOMPSITES, aes(x = DIST_UPRIVER_KM, y = MUDFLAT_BIN)) +
+  geom_point(data = FRECOMPSITES, aes(x = DIST_UPRIVER_KM, y = MUDFLAT_BIN),pch = 21) +
   labs(x = "Distance upriver (km)", y = "Marsh recession (proportion)") + 
   annotate("text", x = 0, y = 1.0, label = "  (a)") +
   theme_classic() +
@@ -141,7 +141,7 @@ predict_recession_elev = data.frame(erosion_protection = "n",
 # Elevation/recession plot
 Plot2B <- ggplot(data = predict_recession_elev, aes(x = elev_adj, y = predicted_bezi))+
   stat_smooth(col = "black",method = "loess") +
-  geom_point(data = FRECOMPSITES, aes(x = ELEV_ADJ, y = MUDFLAT_BIN)) +
+  geom_point(data = FRECOMPSITES, aes(x = ELEV_ADJ, y = MUDFLAT_BIN),pch = 21) +
   labs(x = "Elevation (m)", y ="") + 
   annotate("text", x = 0, y = 1.0, label = " (b)") +
   theme_classic() + 
@@ -163,7 +163,7 @@ predict_recession_age = data.frame(erosion_protection = "n",
 # Age/recession plot
 Plot2C <- ggplot(data = predict_recession_age, aes(x = age, y = predicted_bezi))+
   stat_smooth(col = "black",method = "loess") +
-  geom_point(data = FRECOMPSITES, aes(x = AGE, y = MUDFLAT_BIN)) +
+  geom_point(data = FRECOMPSITES, aes(x = AGE, y = MUDFLAT_BIN),pch = 21) +
   labs(x = "Project age (years)", y = "") + 
   xlim(6,40) +
   annotate("text", x = 6, y = 1.0, label = "  (c)") +
