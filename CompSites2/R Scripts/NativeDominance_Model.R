@@ -100,7 +100,7 @@ hist(fre_scale$native_cover, breaks = 50)
 MuMIn::r.squaredGLMM(natdom_glmer)
 
 # Summary
-#lmerTest::summary(natdom_glmer)
+summary(natdom_glmer)
 
 
 # Main effect tests

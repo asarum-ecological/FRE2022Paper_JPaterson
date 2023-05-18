@@ -244,7 +244,7 @@ Fig5i <- ggplot(data = predict_nonatrich_ref_glm, aes(x = REFERENCE, y = predict
   geom_boxplot(data = fre_scale, aes(x = REFERENCE, y = NN_RICH),outlier.shape = NA) +
   geom_jitter(data = fre_scale, aes(x = REFERENCE, y = NN_RICH),alpha = 0.09) +
   labs(x = "Reference Site", y = "") + 
-  annotate("text", x = .5, y = 13, label = "  (g)") + 
+  annotate("text", x = .5, y = 13, label = "(h)") + 
   theme_classic() +
   theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
 
@@ -266,14 +266,14 @@ Fig5j <- ggplot(data = predict_nonatrich_emb_glm, aes(x = INLAND, y = predicted_
   geom_boxplot(data = fre_scale, aes(x = INLAND, y = NN_RICH),outlier.shape = NA) +
   geom_jitter(data = fre_scale, aes(x = REFERENCE, y = NN_RICH),alpha = 0.09) +
   labs(x = "Closed Embayment", y = "") + 
-  annotate("text", x = .5, y = 13, label = "  (h)") + 
+  annotate("text", x = .5, y = 13, label = "  (g)") + 
   theme_classic() +
   theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
 
 
 
 #formation of panel figure using cowplot
-NONATPANEL <-cowplot::plot_grid(Fig5k,Fig5l, Fig5i, Fig5j, nrow = 1, ncol = 4)
+NONATPANEL <-cowplot::plot_grid(Fig5k,Fig5l,Fig5j,Fig5i, nrow = 1, ncol = 4)
 LEGEND <- cowplot::plot_grid(NULL,legend,ncol = 5)
 
 cowplot::plot_grid(NATPANEL,NONATPANEL,LEGEND,nrow = 3, rel_heights = c(1,1,.1))
