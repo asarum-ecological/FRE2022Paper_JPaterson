@@ -234,7 +234,7 @@ legend <- ggplot(data = fre_scale, aes(x = KM_UPRIVER, y = NAT_RICH)) +
   scale_color_manual(values=colours)+
   labs(color='') +
   theme(legend.key = element_rect(fill = "white"), legend.position = "bottom",legend.box = "horizontal")
-legend = get_legend(legend) #to pull legend for panel figure
+legend = cowplot::get_legend(legend) #to pull legend for panel figure
 
 
 #3. Effect of reference site on native dominance---------------------------
@@ -254,7 +254,7 @@ Fig5c <- ggplot(data = predict_natrich_ref_glm, aes(x = REFERENCE, y = predicted
   geom_boxplot(data = fre_scale, aes(x = REFERENCE, y = NAT_RICH),outlier.shape = NA) +
   geom_jitter(data = fre_scale, aes(x = REFERENCE, y = NAT_RICH),alpha = 0.09) +
   labs(x = "Reference Site", y = "") + 
-  annotate("text", x = .5, y = 13.0, label = "  (c)") + 
+  annotate("text", x = .5, y = 13.0, label = "  (d)") + 
   theme_classic() +
   theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
 
@@ -276,12 +276,12 @@ Fig5d <- ggplot(data = predict_natrich_ref_glm, aes(x = INLAND, y = predicted_gl
   geom_boxplot(data = fre_scale, aes(x = INLAND, y = NAT_RICH),outlier.shape = NA) +
   geom_jitter(data = fre_scale, aes(x = REFERENCE, y = NAT_RICH),alpha = 0.09) +
   labs(x = "Closed Embayment", y = "") + 
-  annotate("text", x = .5, y = 13.0, label = "  (d)") + 
+  annotate("text", x = .5, y = 13.0, label = "  (c)") + 
   theme_classic() +
   theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
 
 #formation of panel figure using cowplot
-NATPANEL <- cowplot::plot_grid(Fig5e,Fig5f,Fig5c, Fig5d, ncol = 4, nrow =1,rel_widths = c(1,1,1,1))
+NATPANEL <- cowplot::plot_grid(Fig5e,Fig5f, Fig5d,Fig5c, ncol = 4, nrow =1,rel_widths = c(1,1,1,1))
 
 #produce model summary table html that can be copied into MS
 sjPlot::tab_model(natrich_glmer)

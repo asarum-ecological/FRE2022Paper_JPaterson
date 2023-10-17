@@ -244,7 +244,7 @@ Fig5i <- ggplot(data = predict_nonatrich_ref_glm, aes(x = REFERENCE, y = predict
   geom_boxplot(data = fre_scale, aes(x = REFERENCE, y = NN_RICH),outlier.shape = NA) +
   geom_jitter(data = fre_scale, aes(x = REFERENCE, y = NN_RICH),alpha = 0.09) +
   labs(x = "Reference Site", y = "") + 
-  annotate("text", x = .5, y = 13, label = "(h)") + 
+  annotate("text", x = .5, y = 13, label = "  (h)") + 
   theme_classic() +
   theme(axis.text.x = element_text(size = 11),axis.text.y = element_text(size = 11)) 
 
